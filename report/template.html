@@ -1,0 +1,296 @@
+<title>Marketeye Phase 1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; a wide "tape" chart of the market sits at its heart, then dominance, regime map, roadmap. */
+:root {
+  --bg: #f3f6f7;
+  --surface: #ffffff;
+  --ink: #12202b;
+  --muted: #5b6b77;
+  --line: #d8e0e5;
+  --btc: #d9780f;          /* accent: bitcoin orange */
+  --long: #13856b;
+  --long-tint: rgba(19,133,107,.10);
+  --short: #c8433a;
+  --short-tint: rgba(200,67,58,.09);
+  --both: #3c6fb0;
+  --outlier: #8a7fa3;
+  --font-display: "Sora", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f171d; --surface: #16222b; --ink: #e4ecf1; --muted: #93a4b0; --line: #2a3a46;
+  --btc: #f0952f; --long: #3cc39e; --long-tint: rgba(60,195,158,.12); --short: #ef6f64; --short-tint: rgba(239,111,100,.11);
+  --both: #6f9fe0; --outlier: #ab9fc8; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f171d; --surface: #16222b; --ink: #e4ecf1; --muted: #93a4b0; --line: #2a3a46;
+  --btc: #f0952f; --long: #3cc39e; --long-tint: rgba(60,195,158,.12); --short: #ef6f64; --short-tint: rgba(239,111,100,.11);
+  --both: #6f9fe0; --outlier: #ab9fc8; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--font-body); }
+.wrap { max-width: 960px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -.02em; }
+h2 { font-size: 22px; font-weight: 600; }
+h3 { font-size: 15px; font-weight: 600; }
+p { margin: 0; max-width: 65ch; }
+.eyebrow { font: 500 12px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--btc); }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+section { display: grid; gap: 16px; min-width: 0; }
+
+header { display: grid; gap: 14px; }
+.lede { font-size: 17px; color: var(--muted); }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font: 13px var(--font-mono); color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 500; }
+
+/* pipeline */
+.pipe { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 4px; align-content: start; }
+.step .n { font: 600 26px var(--font-display); font-variant-numeric: tabular-nums; }
+.step .l { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.step.final { border-color: var(--btc); }
+.split { display: flex; gap: 10px; font: 500 13px var(--font-mono); flex-wrap: wrap; }
+.split span { display: inline-flex; align-items: center; gap: 5px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+/* charts */
+.chart-box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.scroll { overflow-x: auto; }
+svg text { font-family: var(--font-mono); fill: var(--muted); font-size: 11px; }
+svg .lbl { fill: var(--ink); font-size: 11px; font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.note { font-size: 13px; color: var(--muted); }
+
+.tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font: 500 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 7px 8px; border-bottom: 1px solid var(--line); }
+td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+td .nm { color: var(--muted); font-size: 12px; display: block; line-height: 1.3; }
+.pos { color: var(--long); } .neg { color: var(--short); }
+
+/* regimes */
+.regime { display: grid; grid-template-columns: auto repeat(2, minmax(0, 1fr)); gap: 6px; font-size: 14px; }
+.regime .h { font: 500 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 4px; align-self: end; }
+.regime .rh { font: 600 13px var(--font-display); padding: 12px 8px 12px 0; align-self: center; }
+.cell { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px; display: grid; gap: 2px; }
+.cell b { font-weight: 600; }
+.cell.l { border-left: 3px solid var(--long); } .cell.s { border-left: 3px solid var(--short); } .cell.n { border-left: 3px solid var(--btc); }
+.cell small { color: var(--muted); font-size: 12px; }
+
+/* roadmap */
+.road { display: grid; gap: 0; }
+.ph { display: grid; grid-template-columns: 110px minmax(0,1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+.ph:last-child { border-bottom: 1px solid var(--line); }
+.tag { font: 500 12px var(--font-mono); padding: 3px 8px; border-radius: 99px; justify-self: start; align-self: start; border: 1px solid var(--line); color: var(--muted); }
+.tag.done { background: var(--long-tint); color: var(--long); border-color: transparent; }
+.ph ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
+.ph ul li { margin: 2px 0; }
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; display: grid; gap: 6px; }
+@media (max-width: 560px) { .ph { grid-template-columns: 1fr; gap: 6px; } .regime { font-size: 13px; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Marketeye · Phase 1 report</div>
+    <h1>A crypto screener that ranks altcoins against Bitcoin</h1>
+    <p class="lede">Phase 1 is the data foundation of a signal service. Every run pulls the market priced in BTC, drops anything that isn't a tradable altcoin, and sorts what's left into long candidates, short candidates and outliers. It also tracks Bitcoin's dominance, which will later decide whether to favour BTC or alts.</p>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <section>
+    <h2>How one run works</h2>
+    <p class="muted">Each step below shows the live count from the snapshot used for this report. A full run costs 3 API calls out of a 10,000-per-day allowance.</p>
+    <div class="pipe" id="pipe"></div>
+  </section>
+
+  <section>
+    <h2>Where the altcoins landed</h2>
+    <p class="muted">Each dot is one coin, placed by how much it moved against BTC in the last 24 hours. Bigger dots trade more volume. The shaded bands are the long and short entry zones. Coins far outside both are big pumps or dumps, which usually don't offer clean entries.</p>
+    <div class="chart-box">
+      <div class="scroll"><svg id="tape" role="img" aria-label="Altcoins by 24 hour change versus BTC"></svg></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--long)"></i>Long candidate</span>
+        <span><i class="dot" style="background:var(--short)"></i>Short candidate</span>
+        <span><i class="dot" style="background:var(--both)"></i>In both zones (overlap)</span>
+        <span><i class="dot" style="background:var(--outlier)"></i>Outlier</span>
+      </div>
+      <p class="note" id="rangeNote"></p>
+    </div>
+    <div class="tables">
+      <div class="chart-box"><h3>Strongest long candidates</h3><table id="tLong"></table></div>
+      <div class="chart-box"><h3>Weakest short candidates</h3><table id="tShort"></table></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Bitcoin dominance, last 30 days</h2>
+    <p class="muted">Dominance is Bitcoin's share of the total crypto market cap. When it rises, money is flowing into BTC; when it falls, alts tend to outperform. Phase 1 only collects it, and the trend rules come next.</p>
+    <div class="chart-box">
+      <div class="scroll"><svg id="dom" role="img" aria-label="BTC dominance over 30 days"></svg></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The regime map</h2>
+    <p class="muted">The plan is to classify Bitcoin's trend and dominance's trend, then pick a playbook from this grid. The grid is already in the code; the numeric rules that decide each trend are not defined yet.</p>
+    <div class="regime">
+      <div></div><div class="h">Dominance rising</div><div class="h">Dominance falling</div>
+      <div class="rh">BTC bullish</div>
+      <div class="cell n"><b>Long BTC</b><small>Bitcoin leads the move</small></div>
+      <div class="cell l"><b>Long altcoins</b><small>Money rotates into alts</small></div>
+      <div class="rh">BTC ranging</div>
+      <div class="cell n"><b>BTC, or very strong alts</b><small>Only alts beating BTC</small></div>
+      <div class="cell l"><b>Long altcoins</b><small>Alts can run while BTC rests</small></div>
+      <div class="rh">BTC bearish</div>
+      <div class="cell s"><b>Short altcoins</b><small>Alts bleed into BTC</small></div>
+      <div class="cell s"><b>Short BTC</b><small>Broad risk-off</small></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Roadmap</h2>
+    <div class="road">
+      <div class="ph"><span class="tag done">Done</span><div><h3>Phase 1 · Data and screener</h3>
+        <ul><li>LiveCoinWatch client with error handling, timeouts and a call budget</li>
+        <li>Volume filter (≥ 500 BTC / 24h) and long / short / outlier buckets, all tunable from one config file</li>
+        <li>Auto-exclusion of stablecoins, wrapped BTC, gold tokens and tokenized stocks</li>
+        <li>BTC dominance now and over 30 days; CSV export of every run</li></ul></div></div>
+      <div class="ph"><span class="tag">Next</span><div><h3>Regime rules</h3><ul><li>Define what bullish, bearish and range mean for BTC and dominance, then switch on the map above</li></ul></div></div>
+      <div class="ph"><span class="tag">Later</span><div><h3>Chart triggers</h3><ul><li>Entry triggers on each candidate's chart</li></ul></div></div>
+      <div class="ph"><span class="tag">Later</span><div><h3>Alerts and deployment</h3><ul><li>Telegram and Gmail notifications, duplicate-alert protection, scheduled runs, Docker</li></ul></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Data: <a href="https://www.livecoinwatch.com" style="color:inherit">LiveCoinWatch</a>. Snapshot only; the numbers on this page don't update.</span>
+    <span>The long and short ranges are placeholders still being tuned. This is a personal research project, not financial advice.</span>
+  </footer>
+</div>
+
+<script>
+const D = __DATA__;
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const fmtPct = v => (v > 0 ? "+" : "") + v.toFixed(2) + "%";
+const fmtVol = v => Math.round(v).toLocaleString("en-US");
+
+// Merge buckets into one list with a single bucket label each.
+const longSet = new Set(D.long.map(c => c.code)), shortSet = new Set(D.short.map(c => c.code));
+const all = new Map();
+[...D.long, ...D.short].forEach(c => all.set(c.code, { ...c, b: longSet.has(c.code) && shortSet.has(c.code) ? "both" : longSet.has(c.code) ? "long" : "short" }));
+D.outliers.forEach(c => all.set(c.code, { ...c, b: "outlier" }));
+const coins = [...all.values()];
+const nBoth = coins.filter(c => c.b === "both").length;
+const screened = coins.length, noData = D.over500 - D.excluded.length - screened;
+
+document.getElementById("meta").innerHTML =
+  `<span>Snapshot <b>${D.asof}</b></span><span>BTC dominance <b>${D.dom.toFixed(2)}%</b></span><span>API calls per run <b>3</b></span>`;
+
+// Pipeline
+const steps = [
+  { n: D.fetched, l: "coins fetched, priced in BTC and sorted by volume" },
+  { n: D.over500, l: "trade at least 500 BTC in 24h (BTC itself removed)" },
+  { n: D.over500 - D.excluded.length, l: `left after removing ${D.excluded.length} stablecoins, wrapped BTC, gold and stock tokens` + (noData > 0 ? ` (${noData} had no 24h data)` : "") },
+];
+document.getElementById("pipe").innerHTML = steps.map(s => `<div class="step"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`).join("") +
+  `<div class="step final"><div class="l">Bucketed</div><div class="split">
+    <span><i class="dot" style="background:var(--long)"></i>${D.long.length} long</span>
+    <span><i class="dot" style="background:var(--short)"></i>${D.short.length} short</span>
+    <span><i class="dot" style="background:var(--outlier)"></i>${D.outliers.length} outliers</span></div>
+    <div class="l">${nBoth} coins sit in the overlap and count as both</div></div>`;
+
+document.getElementById("rangeNote").textContent =
+  `Long zone ${D.cfg.long.min_pct}% to +${D.cfg.long.max_pct}%, short zone ${D.cfg.short.min_pct}% to +${D.cfg.short.max_pct}% (placeholders). Hover a dot for details.`;
+
+// Tape chart (beeswarm)
+(function () {
+  const W = 900, H = 300, m = { l: 20, r: 20, t: 28, b: 34 };
+  const ext = Math.max(...coins.map(c => Math.abs(c.pct)));
+  const lo = Math.min(-15, Math.floor(Math.min(...coins.map(c => c.pct)) / 5) * 5), hi = Math.max(15, Math.ceil(Math.max(...coins.map(c => c.pct)) / 5) * 5);
+  const x = v => m.l + (v - lo) / (hi - lo) * (W - m.l - m.r);
+  const cy = m.t + (H - m.t - m.b) / 2;
+  const svg = document.getElementById("tape");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.style.width = "100%"; svg.style.minWidth = "640px"; svg.style.display = "block";
+  const L = D.cfg.long, S = D.cfg.short;
+  el("rect", { x: x(L.min_pct), y: m.t, width: x(L.max_pct) - x(L.min_pct), height: H - m.t - m.b, fill: "var(--long-tint)" }, svg);
+  el("rect", { x: x(S.min_pct), y: m.t, width: x(S.max_pct) - x(S.min_pct), height: H - m.t - m.b, fill: "var(--short-tint)" }, svg);
+  el("text", { x: x(L.max_pct) - 6, y: m.t - 10, "text-anchor": "end", style: "fill:var(--long)" }, svg).textContent = "LONG ZONE →";
+  el("text", { x: x(S.min_pct) + 6, y: m.t - 10, style: "fill:var(--short)" }, svg).textContent = "← SHORT ZONE";
+  for (let t = lo; t <= hi; t += 5) {
+    el("line", { x1: x(t), x2: x(t), y1: m.t, y2: H - m.b, stroke: "var(--line)", "stroke-width": t === 0 ? 1.5 : 1 }, svg);
+    el("text", { x: x(t), y: H - m.b + 18, "text-anchor": "middle" }, svg).textContent = (t > 0 ? "+" : "") + t + "%";
+  }
+  el("text", { x: x(0), y: H - 2, "text-anchor": "middle" }, svg).textContent = "24h change vs BTC";
+  const r = v => 3.5 + 3.2 * Math.log10(Math.max(v, 500) / 500);
+  const placed = [];
+  [...coins].sort((a, b) => b.vol - a.vol).forEach(c => {
+    const px = x(c.pct), rad = r(c.vol);
+    let py = cy;
+    for (let i = 0; i < 400; i++) {
+      const off = Math.ceil(i / 2) * 2 * (i % 2 ? -1 : 1);
+      py = cy + off;
+      if (!placed.some(p => Math.hypot(p.x - px, p.y - py) < p.r + rad + 1)) break;
+    }
+    placed.push({ x: px, y: py, r: rad, c });
+  });
+  const col = { long: "var(--long)", short: "var(--short)", both: "var(--both)", outlier: "var(--outlier)" };
+  placed.forEach(p => {
+    const dot = el("circle", { cx: p.x, cy: p.y, r: p.r, fill: col[p.c.b], "fill-opacity": .78, stroke: "var(--surface)", "stroke-width": 1 }, svg);
+    el("title", {}, dot).textContent = `${p.c.code} · ${p.c.name}\n${fmtPct(p.c.pct)} vs BTC · ${fmtVol(p.c.vol)} BTC volume`;
+  });
+  // Label outliers and the three biggest by volume
+  const toLabel = new Set([...D.outliers.map(c => c.code), ...[...coins].sort((a, b) => b.vol - a.vol).slice(0, 3).map(c => c.code)]);
+  const boxes = [];
+  placed.filter(p => toLabel.has(p.c.code)).forEach(p => {
+    const w = p.c.code.length * 7 + 6;
+    const tries = [p.y - p.r - 4, p.y + p.r + 12, p.y - p.r - 18, p.y + p.r + 26, p.y - p.r - 32];
+    const ly = tries.find(ty => !boxes.some(b => Math.abs(b.x - p.x) < (b.w + w) / 2 && Math.abs(b.y - ty) < 13)) ?? tries[0];
+    boxes.push({ x: p.x, y: ly, w });
+    el("text", { x: p.x, y: ly, "text-anchor": "middle", class: "lbl" }, svg).textContent = p.c.code;
+  });
+})();
+
+// Tables
+function table(id, rows) {
+  document.getElementById(id).innerHTML = `<thead><tr><th>Coin</th><th class="num">24h vs BTC</th><th class="num">Vol (BTC)</th></tr></thead><tbody>` +
+    rows.map(c => `<tr><td><b>${c.code}</b><span class="nm">${c.name}</span></td><td class="num ${c.pct >= 0 ? "pos" : "neg"}">${fmtPct(c.pct)}</td><td class="num">${fmtVol(c.vol)}</td></tr>`).join("") + "</tbody>";
+}
+table("tLong", D.long.slice(0, 8));
+table("tShort", D.short.slice(0, 8));
+
+// Dominance line
+(function () {
+  const W = 900, H = 260, m = { l: 48, r: 64, t: 16, b: 30 };
+  const pts = D.hist;
+  const vals = pts.map(p => p[1]);
+  const lo = Math.floor(Math.min(...vals, D.dom) * 2) / 2 - .5, hi = Math.ceil(Math.max(...vals, D.dom) * 2) / 2;
+  const t0 = pts[0][0], t1 = pts[pts.length - 1][0];
+  const x = t => m.l + (t - t0) / (t1 - t0) * (W - m.l - m.r);
+  const y = v => m.t + (hi - v) / (hi - lo) * (H - m.t - m.b);
+  const svg = document.getElementById("dom");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.style.width = "100%"; svg.style.minWidth = "560px"; svg.style.display = "block";
+  for (let v = lo; v <= hi + 1e-9; v += .5) {
+    el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: "var(--line)" }, svg);
+    el("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = v.toFixed(1) + "%";
+  }
+  const day = 86400000;
+  for (let t = t0; t <= t1; t += 7 * day) {
+    const d = new Date(t);
+    el("text", { x: x(t), y: H - 8, "text-anchor": "middle" }, svg).textContent = d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  }
+  const line = pts.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + "," + y(p[1]).toFixed(1)).join("");
+  el("path", { d: line + `L${x(t1)},${y(lo)}L${x(t0)},${y(lo)}Z`, fill: "var(--btc)", "fill-opacity": .10 }, svg);
+  el("path", { d: line, fill: "none", stroke: "var(--btc)", "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+  const last = pts[pts.length - 1];
+  el("circle", { cx: x(last[0]), cy: y(last[1]), r: 4.5, fill: "var(--btc)", stroke: "var(--surface)", "stroke-width": 2 }, svg);
+  el("text", { x: x(last[0]) + 9, y: y(last[1]) + 4, class: "lbl" }, svg).textContent = last[1].toFixed(2) + "%";
+})();
+</script>

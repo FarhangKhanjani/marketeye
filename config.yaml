@@ -1,0 +1,30 @@
+# Marketeye screener settings. Edit freely; no code changes needed.
+
+screener:
+  quote_currency: BTC        # prices and volumes are denominated in this coin
+  min_volume_btc: 500        # 24h volume floor, in BTC
+
+  # !!! PLACEHOLDER RANGES — not final trading rules. Tune these. !!!
+  # 24h change vs BTC, in percent. Bounds are inclusive.
+  long_range:
+    min_pct: -2
+    max_pct: 10
+  short_range:               # mirror of long_range
+    min_pct: -10
+    max_pct: 2
+
+  # Non-alt assets to drop (BTC itself is always excluded).
+  # Categories come from LiveCoinWatch's `categories` field.
+  exclude_categories: [stablecoins, wrapped_tokens, commodities]
+  # Case-insensitive substring match on the coin name (catches tokenized stocks).
+  exclude_name_keywords: [tokenized]
+  # Exact LiveCoinWatch codes (note: some codes have leading underscores).
+  exclude_codes: []
+
+dominance:
+  history_days: 30
+
+api:
+  page_size: 100             # LiveCoinWatch max is 100 per call
+  max_pages: 10              # hard cap on coins/list calls per run (credit guard)
+  timeout_seconds: 15

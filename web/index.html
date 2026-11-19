@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketeye</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky top bar; settings rail on the left (stacks on narrow screens); results column on the right. */
+:root {
+  --bg: #f3f6f7; --surface: #ffffff; --surface-2: #eef2f4; --ink: #12202b; --muted: #5b6b77; --line: #d8e0e5;
+  --btc: #d9780f; --btc-ink: #ffffff;
+  --long: #13856b; --long-tint: rgba(19,133,107,.10);
+  --short: #c8433a; --short-tint: rgba(200,67,58,.09);
+  --both: #3c6fb0; --outlier: #8a7fa3; --warn-bg: #fff4e0; --warn-ink: #8a4b00;
+  --font-display: "Sora", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #0f171d; --surface: #16222b; --surface-2: #1c2a34; --ink: #e4ecf1; --muted: #93a4b0; --line: #2a3a46;
+  --btc: #f0952f; --btc-ink: #1a1006; --long: #3cc39e; --long-tint: rgba(60,195,158,.12);
+  --short: #ef6f64; --short-tint: rgba(239,111,100,.11); --both: #6f9fe0; --outlier: #ab9fc8;
+  --warn-bg: #3a2a10; --warn-ink: #ffc978; color-scheme: dark } }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font-body); }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.2; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--btc); outline-offset: 2px; }
+
+.bar { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.bar-in { max-width: 1280px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap; }
+.brand { font: 700 18px var(--font-display); letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+.brand i { width: 12px; height: 12px; border-radius: 50%; background: var(--btc); display: inline-block; }
+.status { color: var(--muted); font-size: 13px; flex: 1; min-width: 180px; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--btc); border-color: var(--btc); color: var(--btc-ink); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn:disabled { opacity: .55; cursor: progress; }
+.btn small { font-weight: 400; opacity: .8; margin-left: 4px; }
+
+.page { max-width: 1280px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .page { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.panel h2 { font-size: 15px; font-weight: 600; }
+.sub { color: var(--muted); font-size: 12.5px; }
+
+/* settings */
+.side { position: sticky; top: 76px; }
+@media (max-width: 860px) { .side { position: static; } }
+fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+legend { font: 500 11px var(--font-mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding: 0; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+label { display: grid; gap: 3px; font-size: 12px; color: var(--muted); }
+input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+input.bad { border-color: var(--short); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.msg { font-size: 12.5px; min-height: 1em; }
+.msg.err { color: var(--short); } .msg.ok { color: var(--long); }
+.tag-ph { font: 500 10px var(--font-mono); color: var(--warn-ink); background: var(--warn-bg); padding: 1px 6px; border-radius: 99px; letter-spacing: .04em; }
+
+/* main */
+.main { display: grid; gap: 20px; min-width: 0; }
+.banner { background: var(--warn-bg); color: var(--warn-ink); padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+.banner.err { background: var(--short-tint); color: var(--short); }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 2px; }
+.tile .k { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.tile .v { font: 600 24px var(--font-display); font-variant-numeric: tabular-nums; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+.scroll { overflow-x: auto; }
+svg text { font-family: var(--font-mono); fill: var(--muted); font-size: 11px; }
+svg .lbl { fill: var(--ink); font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.tab { border: 0; background: none; padding: 8px 12px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 500; display: inline-flex; gap: 6px; align-items: center; }
+.tab[aria-selected=true] { color: var(--ink); border-bottom-color: var(--btc); }
+.tab .c { font: 12px var(--font-mono); background: var(--surface-2); padding: 0 6px; border-radius: 99px; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font: 500 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px; border-bottom: 1px solid var(--line); cursor: pointer; user-select: none; white-space: nowrap; }
+th:hover { color: var(--ink); }
+th.num, td.num { text-align: right; }
+td { padding: 7px 8px; border-bottom: 1px solid var(--line); }
+td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+tr.both td:first-child { box-shadow: inset 3px 0 var(--both); }
+.pos { color: var(--long); } .neg { color: var(--short); }
+.nm { color: var(--muted); }
+.empty { text-align: center; padding: 48px 16px; display: grid; gap: 10px; justify-items: center; color: var(--muted); }
+.empty h2 { color: var(--ink); font-size: 18px; }
+footer { color: var(--muted); font-size: 12px; text-align: center; padding: 8px 0 24px; }
+footer a { color: inherit; }
+</style>
+</head>
+<body>
+<div class="bar"><div class="bar-in">
+  <div class="brand"><i></i>Marketeye</div>
+  <div class="status" id="status">No data loaded yet</div>
+  <button class="btn primary" id="refresh">Refresh data<small>~3 credits</small></button>
+</div></div>
+
+<div class="page">
+  <aside class="panel side">
+    <div><h2>Screen settings</h2><div class="sub" id="setSub">Saved to config.yaml. Changing them re-screens the last fetch at no cost.</div></div>
+    <form id="form" novalidate>
+      <div style="display:grid;gap:16px">
+        <fieldset><legend>Volume floor</legend>
+          <label for="vol">Minimum 24h volume (BTC)<input type="number" id="vol" step="any" min="0"></label>
+        </fieldset>
+        <fieldset><legend><span class="dot" style="background:var(--long)"></span>Long zone <span class="tag-ph">placeholder</span></legend>
+          <div class="pair">
+            <label for="lmin">From %<input type="number" id="lmin" step="any"></label>
+            <label for="lmax">To %<input type="number" id="lmax" step="any"></label>
+          </div>
+        </fieldset>
+        <fieldset><legend><span class="dot" style="background:var(--short)"></span>Short zone <span class="tag-ph">placeholder</span></legend>
+          <div class="pair">
+            <label for="smin">From %<input type="number" id="smin" step="any"></label>
+            <label for="smax">To %<input type="number" id="smax" step="any"></label>
+          </div>
+        </fieldset>
+        <div class="actions">
+          <button class="btn primary" type="submit" id="save">Save and re-screen</button>
+          <button class="btn" type="button" id="reset">Undo changes</button>
+          <button class="btn" type="button" id="defaults" hidden>Reset to defaults</button>
+        </div>
+        <div class="msg" id="formMsg" role="status"></div>
+      </div>
+    </form>
+  </aside>
+
+  <main class="main" id="main"></main>
+</div>
+<footer>Data from <a href="https://www.livecoinwatch.com" target="_blank" rel="noopener">LiveCoinWatch</a>. Ranges are placeholders. Not financial advice.</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const fmtPct = v => (v > 0 ? "+" : "") + v.toFixed(2) + "%";
+const fmtVol = v => Math.round(v).toLocaleString("en-US");
+const show = code => code.replace(/^_+/, "") || code;   // LCW prefixes duplicate tickers with underscores
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// MODE "server": local Flask app (python app.py) - live refresh, settings saved to config.yaml.
+// MODE "static": GitHub Pages - reads data.json (refreshed by a scheduled GitHub Action),
+//                settings are kept in this browser only.
+let MODE = "server", DEFAULTS = null;
+const LS_KEY = "marketeye.settings";
+let S = { settings: null, data: null };
+let tab = "long", sort = { key: "pct", dir: -1 }, err = "";
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? { cache: "no-store" } : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const json = await res.json().catch(() => ({ error: `Server returned ${res.status}` }));
+  if (!res.ok) throw new Error(json.error || `Server returned ${res.status}`);
+  return json;
+}
+
+// ---------- settings form ----------
+const fields = { vol: ["min_volume_btc"], lmin: ["long_range", "min_pct"], lmax: ["long_range", "max_pct"], smin: ["short_range", "min_pct"], smax: ["short_range", "max_pct"] };
+function fillForm() { for (const id in fields) { const [a, b] = fields[id]; $(id).value = b ? S.settings[a][b] : S.settings[a]; $(id).classList.remove("bad"); } }
+function readForm() {
+  const v = id => Number($(id).value);
+  return { min_volume_btc: v("vol"), long_range: { min_pct: v("lmin"), max_pct: v("lmax") }, short_range: { min_pct: v("smin"), max_pct: v("smax") } };
+}
+function setMsg(text, kind = "") { $("formMsg").textContent = text; $("formMsg").className = "msg " + kind; }
+
+$("form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const bad = Object.keys(fields).filter(id => $(id).value.trim() === "" || isNaN(Number($(id).value)));
+  Object.keys(fields).forEach(id => $(id).classList.toggle("bad", bad.includes(id)));
+  if (bad.length) return setMsg("Every field needs a number.", "err");
+  $("save").disabled = true;
+  try {
+    if (MODE === "static") {
+      const s = readForm(), e = validate(s); if (e) throw new Error(e);
+      S.settings = s; try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch {}
+      setMsg("Saved in this browser. Results updated.", "ok");
+    } else { S = await api("api/settings", readForm()); setMsg("Saved. Results updated.", "ok"); }
+    fillForm(); render();
+  }
+  catch (x) { setMsg(x.message, "err"); }
+  finally { $("save").disabled = false; }
+});
+$("reset").addEventListener("click", () => { fillForm(); setMsg(""); });
+$("defaults").addEventListener("click", () => {
+  S.settings = structuredClone(DEFAULTS); try { localStorage.removeItem(LS_KEY); } catch {}
+  fillForm(); setMsg("Back to the default settings.", "ok"); render();
+});
+function validate(s) {
+  if (!(s.min_volume_btc > 0)) return "Minimum volume must be above 0 BTC.";
+  if (s.long_range.min_pct >= s.long_range.max_pct) return "Long range: the minimum must be below the maximum.";
+  if (s.short_range.min_pct >= s.short_range.max_pct) return "Short range: the minimum must be below the maximum.";
+  return "";
+}
+// Same rules as screener.py: inclusive ranges, a coin can be in both zones, outliers fit neither.
+function bucket(d, s) {
+  const inR = (v, r) => v >= r.min_pct && v <= r.max_pct;
+  const pool = d.coins.filter(c => c.vol >= s.min_volume_btc);
+  return {
+    pool,
+    long: pool.filter(c => inR(c.pct, s.long_range)).sort((a, b) => b.pct - a.pct),
+    short: pool.filter(c => inR(c.pct, s.short_range)).sort((a, b) => a.pct - b.pct),
+    outliers: pool.filter(c => !inR(c.pct, s.long_range) && !inR(c.pct, s.short_range)).sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct)),
+    needs_refetch: s.min_volume_btc < d.min_volume_fetched,
+  };
+}
+
+$("refresh").addEventListener("click", async () => {
+  const b = $("refresh"); b.disabled = true; b.firstChild.textContent = "Fetching…"; err = "";
+  try { const r = await api("api/refresh", {}); S = { settings: r.settings, data: r.data }; $("status").dataset.csv = r.csv; }
+  catch (x) { err = x.message; }
+  finally { b.disabled = false; b.firstChild.textContent = "Refresh data"; render(); }
+});
+
+// ---------- rendering ----------
+function render() {
+  const raw = S.data, main = $("main");
+  const ago = t => { const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 1 ? "just now" : m < 60 ? `${m} min ago` : `${Math.round(m / 60)} h ago`; };
+  $("status").textContent = !raw ? "No data loaded yet"
+    : MODE === "static" ? `Updated ${ago(raw.fetched_at)} (${new Date(raw.fetched_at).toLocaleString()}) · refreshes every 30 min`
+    : `Fetched ${new Date(raw.fetched_at).toLocaleString()} · ${raw.api_calls} API calls` + ($("status").dataset.csv ? ` · saved ${$("status").dataset.csv}` : "");
+  const d = raw && { ...raw, ...bucket(raw, S.settings) };
+  if (!d) {
+    main.innerHTML = (err ? `<div class="banner err">${esc(err)}</div>` : "") +
+      `<div class="panel empty"><h2>No market data yet</h2><p>Refresh to fetch altcoins priced in BTC and the last 30 days of BTC dominance.<br>One refresh uses about 3 of your 10,000 daily LiveCoinWatch credits.</p>
+       <button class="btn primary" onclick="$('refresh').click()">Refresh data</button></div>`;
+    return;
+  }
+  const longS = new Set(d.long.map(c => c.code)), shortS = new Set(d.short.map(c => c.code));
+  const both = d.long.filter(c => shortS.has(c.code)).length;
+  main.innerHTML =
+    (err ? `<div class="banner err">${esc(err)}</div>` : "") +
+    (d.needs_refetch ? `<div class="banner">The volume floor is below ${fmtVol(d.min_volume_fetched)} BTC, the floor of the last fetch, so some lower-volume coins are missing.${MODE === "server" ? " Refresh data to include them." : ""}</div>` : "") +
+    `<div class="tiles">
+      <div class="tile"><div class="k"><i class="dot" style="background:var(--long)"></i>Long candidates</div><div class="v">${d.long.length}</div></div>
+      <div class="tile"><div class="k"><i class="dot" style="background:var(--short)"></i>Short candidates</div><div class="v">${d.short.length}</div></div>
+      <div class="tile"><div class="k"><i class="dot" style="background:var(--outlier)"></i>Outliers</div><div class="v">${d.outliers.length}</div></div>
+      <div class="tile"><div class="k"><i class="dot" style="background:var(--btc)"></i>BTC dominance</div><div class="v">${d.dominance.toFixed(2)}%</div></div>
+    </div>
+    <section class="panel">
+      <div><h2>Altcoins by 24h change vs BTC</h2>
+      <div class="sub">${d.pool.length} alts above ${fmtVol(S.settings.min_volume_btc)} BTC volume · ${d.excluded.length} non-alts removed (stablecoins, wrapped BTC, gold, stock tokens) · ${both} coins sit in both zones. Dot size = volume. Hover for details.</div></div>
+      <div class="scroll"><svg id="tape" role="img" aria-label="Altcoins by 24h change versus BTC"></svg></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--long)"></i>Long</span><span><i class="dot" style="background:var(--short)"></i>Short</span>
+        <span><i class="dot" style="background:var(--both)"></i>Both zones</span><span><i class="dot" style="background:var(--outlier)"></i>Outlier</span>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="tabs" role="tablist">
+        ${[["long", "Long", d.long.length], ["short", "Short", d.short.length], ["outliers", "Outliers", d.outliers.length]].map(([k, l, n]) =>
+          `<button class="tab" role="tab" aria-selected="${tab === k}" data-tab="${k}">${l}<span class="c">${n}</span></button>`).join("")}
+      </div>
+      <div class="scroll"><table id="tbl"></table></div>
+    </section>
+    <section class="panel">
+      <div><h2>BTC dominance, last 30 days</h2><div class="sub">Bitcoin's share of total crypto market cap. Trend rules come in the next phase.</div></div>
+      <div class="scroll"><svg id="dom" role="img" aria-label="BTC dominance over 30 days"></svg></div>
+    </section>`;
+  main.querySelectorAll(".tab").forEach(b => b.onclick = () => { tab = b.dataset.tab; sort = { key: "pct", dir: tab === "short" ? 1 : -1 }; render(); });
+  drawTape(d, longS, shortS);
+  drawTable(d, shortS, longS);
+  drawDom(d);
+}
+
+function drawTable(d, shortS, longS) {
+  const rows = [...d[tab]].sort((a, b) => {
+    const A = a[sort.key], B = b[sort.key];
+    return (typeof A === "string" ? show(A).localeCompare(show(B)) : A - B) * sort.dir;
+  });
+  const cols = [["code", "Coin", ""], ["name", "Name", ""], ["pct", "24h vs BTC", "num"], ["vol", "Volume (BTC)", "num"], ["rate", "Price (BTC)", "num"]];
+  const arrow = k => sort.key === k ? (sort.dir > 0 ? " ↑" : " ↓") : "";
+  $("tbl").innerHTML = `<thead><tr>${cols.map(([k, l, c]) => `<th class="${c}" data-k="${k}">${l}${arrow(k)}</th>`).join("")}</tr></thead><tbody>` +
+    (rows.length ? rows.map(c => `<tr class="${longS.has(c.code) && shortS.has(c.code) ? "both" : ""}">
+      <td title="${esc(c.code)}"><b>${esc(show(c.code))}</b></td><td class="nm">${esc(c.name)}</td>
+      <td class="num ${c.pct >= 0 ? "pos" : "neg"}">${fmtPct(c.pct)}</td><td class="num">${fmtVol(c.vol)}</td>
+      <td class="num">${c.rate < 0.0001 ? c.rate.toExponential(3) : c.rate.toFixed(6)}</td></tr>`).join("")
+      : `<tr><td colspan="5" class="nm" style="text-align:center;padding:24px">No coins in this bucket with the current settings.</td></tr>`) + "</tbody>";
+  $("tbl").querySelectorAll("th").forEach(th => th.onclick = () => {
+    const k = th.dataset.k; sort = sort.key === k ? { key: k, dir: -sort.dir } : { key: k, dir: k === "code" || k === "name" ? 1 : -1 };
+    drawTable(d, shortS, longS);
+  });
+}
+
+function drawTape(d, longS, shortS) {
+  const coins = [...new Map([...d.long, ...d.short, ...d.outliers].map(c => [c.code, c])).values()].map(c => ({
+    ...c, b: longS.has(c.code) && shortS.has(c.code) ? "both" : longS.has(c.code) ? "long" : shortS.has(c.code) ? "short" : "outlier" }));
+  const W = 900, H = 300, m = { l: 20, r: 20, t: 28, b: 34 };
+  const L = S.settings.long_range, Sr = S.settings.short_range;
+  const pcts = coins.map(c => c.pct).concat([L.min_pct, L.max_pct, Sr.min_pct, Sr.max_pct]);
+  const lo = Math.min(-15, Math.floor(Math.min(...pcts) / 5) * 5), hi = Math.max(15, Math.ceil(Math.max(...pcts) / 5) * 5);
+  const step = (hi - lo) > 80 ? 20 : (hi - lo) > 40 ? 10 : 5;
+  const x = v => m.l + (v - lo) / (hi - lo) * (W - m.l - m.r), cy = m.t + (H - m.t - m.b) / 2;
+  const svg = $("tape"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.style.cssText = "width:100%;min-width:640px;display:block";
+  el("rect", { x: x(L.min_pct), y: m.t, width: x(L.max_pct) - x(L.min_pct), height: H - m.t - m.b, fill: "var(--long-tint)" }, svg);
+  el("rect", { x: x(Sr.min_pct), y: m.t, width: x(Sr.max_pct) - x(Sr.min_pct), height: H - m.t - m.b, fill: "var(--short-tint)" }, svg);
+  el("text", { x: x(L.max_pct) - 6, y: m.t - 10, "text-anchor": "end", style: "fill:var(--long)" }, svg).textContent = "LONG ZONE →";
+  el("text", { x: x(Sr.min_pct) + 6, y: m.t - 10, style: "fill:var(--short)" }, svg).textContent = "← SHORT ZONE";
+  for (let t = Math.ceil(lo / step) * step; t <= hi; t += step) {
+    el("line", { x1: x(t), x2: x(t), y1: m.t, y2: H - m.b, stroke: "var(--line)", "stroke-width": t === 0 ? 1.5 : 1 }, svg);
+    el("text", { x: x(t), y: H - m.b + 18, "text-anchor": "middle" }, svg).textContent = (t > 0 ? "+" : "") + t + "%";
+  }
+  const r = v => 3.5 + 3.2 * Math.log10(Math.max(v, 500) / 500);
+  const placed = [];
+  [...coins].sort((a, b) => b.vol - a.vol).forEach(c => {
+    const px = x(c.pct), rad = r(c.vol); let py = cy;
+    for (let i = 0; i < 400; i++) { py = cy + Math.ceil(i / 2) * 2 * (i % 2 ? -1 : 1); if (!placed.some(p => Math.hypot(p.x - px, p.y - py) < p.r + rad + 1)) break; }
+    placed.push({ x: px, y: py, r: rad, c });
+  });
+  const col = { long: "var(--long)", short: "var(--short)", both: "var(--both)", outlier: "var(--outlier)" };
+  placed.forEach(p => {
+    const dot = el("circle", { cx: p.x, cy: p.y, r: p.r, fill: col[p.c.b], "fill-opacity": .78, stroke: "var(--surface)", "stroke-width": 1 }, svg);
+    el("title", {}, dot).textContent = `${show(p.c.code)} · ${p.c.name}\n${fmtPct(p.c.pct)} vs BTC · ${fmtVol(p.c.vol)} BTC volume`;
+  });
+  const toLabel = new Set([...d.outliers.map(c => c.code), ...[...coins].sort((a, b) => b.vol - a.vol).slice(0, 3).map(c => c.code)]);
+  const boxes = [];
+  placed.filter(p => toLabel.has(p.c.code)).forEach(p => {
+    const t = show(p.c.code), w = t.length * 7 + 6;
+    const tries = [p.y - p.r - 4, p.y + p.r + 12, p.y - p.r - 18, p.y + p.r + 26, p.y - p.r - 32];
+    const ly = tries.find(ty => !boxes.some(b => Math.abs(b.x - p.x) < (b.w + w) / 2 && Math.abs(b.y - ty) < 13)) ?? tries[0];
+    boxes.push({ x: p.x, y: ly, w });
+    el("text", { x: p.x, y: ly, "text-anchor": "middle", class: "lbl" }, svg).textContent = t;
+  });
+}
+
+function drawDom(d) {
+  const pts = d.dominance_history; if (pts.length < 2) return;
+  const W = 900, H = 240, m = { l: 48, r: 64, t: 16, b: 30 };
+  const vals = pts.map(p => p[1]);
+  const lo = Math.floor(Math.min(...vals) * 2) / 2 - .5, hi = Math.ceil(Math.max(...vals) * 2) / 2;
+  const t0 = pts[0][0], t1 = pts[pts.length - 1][0];
+  const x = t => m.l + (t - t0) / (t1 - t0) * (W - m.l - m.r), y = v => m.t + (hi - v) / (hi - lo) * (H - m.t - m.b);
+  const svg = $("dom"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.style.cssText = "width:100%;min-width:560px;display:block";
+  for (let v = lo; v <= hi + 1e-9; v += .5) {
+    el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: "var(--line)" }, svg);
+    el("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = v.toFixed(1) + "%";
+  }
+  for (let t = t0; t <= t1; t += 7 * 864e5)
+    el("text", { x: x(t), y: H - 8, "text-anchor": "middle" }, svg).textContent = new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const line = pts.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + "," + y(p[1]).toFixed(1)).join("");
+  el("path", { d: line + `L${x(t1)},${y(lo)}L${x(t0)},${y(lo)}Z`, fill: "var(--btc)", "fill-opacity": .10 }, svg);
+  el("path", { d: line, fill: "none", stroke: "var(--btc)", "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+  const last = pts[pts.length - 1];
+  el("circle", { cx: x(last[0]), cy: y(last[1]), r: 4.5, fill: "var(--btc)", stroke: "var(--surface)", "stroke-width": 2 }, svg);
+  el("text", { x: x(last[0]) + 9, y: y(last[1]) + 4, class: "lbl" }, svg).textContent = last[1].toFixed(2) + "%";
+}
+
+async function boot() {
+  try { S = await api("api/state"); }
+  catch {
+    MODE = "static";
+    $("refresh").hidden = true; $("defaults").hidden = false;
+    $("setSub").textContent = "Saved in this browser only. Changing them re-screens the latest data instantly.";
+    try {
+      const pub = await api("data.json");
+      DEFAULTS = pub.settings;
+      let saved = null; try { saved = JSON.parse(localStorage.getItem(LS_KEY)); } catch {}
+      S = { settings: saved && !validate(saved) ? saved : structuredClone(DEFAULTS), data: pub.data };
+    } catch (x) { err = "Could not load the latest data: " + x.message; S = { settings: null, data: null }; }
+  }
+  if (S.settings) fillForm();
+  render();
+  if (MODE === "static") setInterval(async () => {   // pick up new data without a reload
+    try { const pub = await api("data.json"); if (pub.data.fetched_at !== S.data?.fetched_at) { S.data = pub.data; render(); } } catch {}
+  }, 5 * 60 * 1000);
+}
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "marketeye",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "app.py"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "marketeye-static",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8001",
+        "--directory",
+        "_site"
+      ],
+      "port": 8001
+    }
+  ]
+}

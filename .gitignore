@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+output/*
+!output/.gitkeep
+_site/
+report/marketeye_report.html
+.claude/settings.local.json

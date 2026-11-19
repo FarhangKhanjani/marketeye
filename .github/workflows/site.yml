@@ -1,0 +1,44 @@
+# Fetches fresh market data every 30 minutes and publishes the site to GitHub Pages.
+# Needs the repository secret LCW_API_KEY. Run it by hand from the Actions tab ("Run workflow").
+name: Update site
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # UTC; GitHub may start scheduled runs a few minutes late
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Fetch data and build site
+        run: python export_site.py
+        env:
+          LCW_API_KEY: ${{ secrets.LCW_API_KEY }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
