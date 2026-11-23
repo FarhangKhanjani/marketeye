@@ -2,6 +2,8 @@
 
 Crypto market screener and (eventually) signal service. **Phase 1**: altcoin screener vs BTC + BTC dominance data, using the [LiveCoinWatch API](https://livecoinwatch.github.io/lcw-api-docs/).
 
+**Live:** https://farhangkhanjani.github.io/marketeye/ (updates every 30 minutes)
+
 ## Setup
 ```bash
 pip install -r requirements.txt
