@@ -47,11 +47,12 @@ it runs `export_site.py`, which fetches fresh data (~3 credits, ~150/day) and pu
 - Setup: add the repository secret `LCW_API_KEY`, and set Settings → Pages → Source to "GitHub Actions".
 - GitHub pauses scheduled workflows after 60 days without repository activity; it emails you first, and one click re-enables them.
 
-## Login and history (Firebase)
+## Login and history (Supabase)
 Anyone can use the screener. Logged-in users can **Save search** (a full snapshot: settings, time,
 dominance and every coin per bucket) and browse or delete saved searches on `history.html`.
 
-- `web/auth.js` talks to Firebase Auth + Firestore; `web/firebase-config.js` holds the (public) web config.
-  While it is empty, login and history are hidden and the site works as before.
-- Usernames map to Firebase emails: `admin` -> `admin@marketeye.app`.
-- `firestore.rules`: each user can read, create and delete only their own searches (`users/{uid}/searches`).
+- `web/auth.js` talks to Supabase Auth + Postgres; `web/supabase-config.js` holds the project URL and anon key
+  (public by design). While they are empty, login and history are hidden and the site works as before.
+- `supabase/schema.sql` creates the `searches` table with row-level security: each user sees only their own rows.
+- Usernames map to Supabase emails: `admin` -> `admin@marketeye.app`.
+- The 30-minute workflow also pings Supabase so the free project doesn't pause after a week of inactivity.
