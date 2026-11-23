@@ -29,7 +29,8 @@ python app.py       # Web UI at http://127.0.0.1:8000
 | `regime.py` | Stub: 6-regime → action mapping; classification rules TBD |
 | `pipeline.py` | One screening run, shared by the CLI and the web app; CSV export |
 | `main.py` | CLI: prints tables, writes `output/screen_<UTC timestamp>.csv` |
-| `app.py` + `web/index.html` | Flask server and single-page UI |
+| `app.py` | Flask server for the local app |
+| `web/` | Pages (`index`, `login`, `history`), `style.css`, `charts.js`, `auth.js` |
 | `report/` | Template for the shareable Phase 1 report |
 
 ## Credits
@@ -45,3 +46,12 @@ it runs `export_site.py`, which fetches fresh data (~3 credits, ~150/day) and pu
 - The page detects it is static: no Refresh button, and settings are saved in the visitor's browser only. Defaults come from `config.yaml` in the repo.
 - Setup: add the repository secret `LCW_API_KEY`, and set Settings → Pages → Source to "GitHub Actions".
 - GitHub pauses scheduled workflows after 60 days without repository activity; it emails you first, and one click re-enables them.
+
+## Login and history (Firebase)
+Anyone can use the screener. Logged-in users can **Save search** (a full snapshot: settings, time,
+dominance and every coin per bucket) and browse or delete saved searches on `history.html`.
+
+- `web/auth.js` talks to Firebase Auth + Firestore; `web/firebase-config.js` holds the (public) web config.
+  While it is empty, login and history are hidden and the site works as before.
+- Usernames map to Firebase emails: `admin` -> `admin@marketeye.app`.
+- `firestore.rules`: each user can read, create and delete only their own searches (`users/{uid}/searches`).

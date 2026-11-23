@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History · Marketeye</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+.list { display: grid; gap: 0; padding: 6px; }
+.item { display: grid; gap: 3px; text-align: left; border: 0; background: none; padding: 10px; border-radius: 6px; cursor: pointer; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.item:hover { background: var(--surface-2); }
+.item[aria-current=true] { background: var(--surface-2); box-shadow: inset 3px 0 var(--btc); }
+.item .when { font-weight: 600; }
+.item .meta { font: 12px var(--font-mono); color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+.head { display: flex; justify-content: space-between; align-items: start; gap: 12px; flex-wrap: wrap; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; font: 12px var(--font-mono); }
+.chips span { background: var(--surface-2); padding: 2px 8px; border-radius: 99px; color: var(--muted); }
+.btn.danger { color: var(--short); }
+.tbls { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.tbls th { cursor: default; }
+</style>
+</head>
+<body>
+<div class="bar"><div class="bar-in">
+  <a href="index.html" class="brand" style="color:inherit;text-decoration:none"><i></i>Marketeye</a>
+  <div class="status">Saved searches</div>
+  <a class="btn" href="index.html" style="text-decoration:none">Back to screener</a>
+  <div class="userbox" id="userBox"></div>
+</div></div>
+
+<div class="page">
+  <aside class="panel side" style="padding:10px">
+    <h2 style="padding:6px 6px 0">History</h2>
+    <div class="list" id="list"><div class="sub" style="padding:6px">Loading…</div></div>
+  </aside>
+  <main class="main" id="detail"></main>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="charts.js"></script>
+<script type="module">
+import * as A from "./auth.js";
+let items = [], current = null;
+const when = d => d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+const rng = r => `${r.min_pct}% to ${r.max_pct > 0 ? "+" : ""}${r.max_pct}%`;
+function toast(t) { const e = $("toast"); e.textContent = t; e.hidden = false; clearTimeout(e._h); e._h = setTimeout(() => e.hidden = true, 5000); }
+
+function renderList() {
+  $("list").innerHTML = items.length ? items.map(s => `
+    <button class="item" data-id="${s.id}" aria-current="${s.id === current}">
+      <span class="when">${when(s.saved_at)}</span>
+      <span class="meta"><span class="pos">${s.long.length} long</span><span class="neg">${s.short.length} short</span><span>${s.outliers.length} outliers</span></span>
+    </button>`).join("")
+    : `<div class="sub" style="padding:6px">No saved searches yet. Use <b>Save search</b> on the screener.</div>`;
+  $("list").querySelectorAll(".item").forEach(b => b.onclick = () => { location.hash = b.dataset.id; });
+}
+
+function table(title, rows, dot) {
+  return `<div><h3 style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><i class="dot" style="background:${dot}"></i>${title} <span class="sub">(${rows.length})</span></h3>
+    <div class="scroll"><table><thead><tr><th>Coin</th><th class="num">24h vs BTC</th><th class="num">Vol (BTC)</th></tr></thead><tbody>${
+      rows.length ? rows.map(c => `<tr><td><b>${esc(show(c.code))}</b> <span class="nm">${esc(c.name)}</span></td>
+        <td class="num ${c.pct >= 0 ? "pos" : "neg"}">${fmtPct(c.pct)}</td><td class="num">${fmtVol(c.vol)}</td></tr>`).join("")
+      : `<tr><td colspan="3" class="nm">None</td></tr>`}</tbody></table></div></div>`;
+}
+
+function renderDetail() {
+  const s = items.find(i => i.id === current);
+  if (!s) { $("detail").innerHTML = ""; return; }
+  const st = s.settings;
+  $("detail").innerHTML = `
+    <section class="panel">
+      <div class="head">
+        <div style="display:grid;gap:6px"><h2>Saved ${when(s.saved_at)}</h2>
+          <div class="sub">Market data from ${when(new Date(s.fetched_at))} · ${s.pool} alts above the volume floor</div>
+          <div class="chips"><span>Volume ≥ ${fmtVol(st.min_volume_btc)} BTC</span><span>Long ${rng(st.long_range)}</span><span>Short ${rng(st.short_range)}</span></div></div>
+        <button class="btn danger" id="del">Delete</button>
+      </div>
+    </section>
+    <div class="tiles">
+      <div class="tile"><div class="k"><i class="dot" style="background:var(--long)"></i>Long candidates</div><div class="v">${s.long.length}</div></div>
+      <div class="tile"><div class="k"><i class="dot" style="background:var(--short)"></i>Short candidates</div><div class="v">${s.short.length}</div></div>
+      <div class="tile"><div class="k"><i class="dot" style="background:var(--outlier)"></i>Outliers</div><div class="v">${s.outliers.length}</div></div>
+      <div class="tile"><div class="k"><i class="dot" style="background:var(--btc)"></i>BTC dominance</div><div class="v">${s.dominance.toFixed(2)}%</div></div>
+    </div>
+    <section class="panel"><h2>Altcoins by 24h change vs BTC</h2><div class="scroll"><svg id="tape" role="img" aria-label="Saved altcoins by 24h change versus BTC"></svg></div>
+      <div class="legend"><span><i class="dot" style="background:var(--long)"></i>Long</span><span><i class="dot" style="background:var(--short)"></i>Short</span>
+      <span><i class="dot" style="background:var(--both)"></i>Both zones</span><span><i class="dot" style="background:var(--outlier)"></i>Outlier</span></div></section>
+    <section class="panel tbls">${table("Long", s.long, "var(--long)")}${table("Short", s.short, "var(--short)")}${table("Outliers", s.outliers, "var(--outlier)")}</section>`;
+  drawTape($("tape"), s, st);
+  $("del").onclick = async () => {
+    if (!confirm("Delete this saved search? This can't be undone.")) return;
+    try {
+      await A.deleteSearch(s.id);
+      items = items.filter(i => i.id !== s.id);
+      history.replaceState(null, "", location.pathname); route(); toast("Deleted.");
+    } catch (e) { toast("Could not delete: " + A.friendlyError(e)); }
+  };
+}
+
+function route() { current = location.hash.slice(1) || items[0]?.id || null; renderList(); renderDetail(); }
+window.addEventListener("hashchange", route);
+
+if (!A.configured) {
+  $("list").innerHTML = `<div class="sub" style="padding:6px">History isn't set up on this site yet.</div>`;
+} else {
+  A.onUser(async u => {
+    if (!u) { location.replace("login.html?next=history.html"); return; }
+    $("userBox").innerHTML = `<span class="who">${esc(A.displayName(u))}</span><button class="lnk" id="logout">Log out</button>`;
+    $("logout").onclick = () => A.logout();
+    try { items = await A.listSearches(); route(); }
+    catch (e) { $("list").innerHTML = `<div class="msg err" style="padding:6px">Could not load history: ${esc(A.friendlyError(e))}</div>`; }
+  });
+}
+</script>
+</body>
+</html>

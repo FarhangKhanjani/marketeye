@@ -1,6 +1,6 @@
 """Build the static GitHub Pages site into _site/ (used by .github/workflows/site.yml).
 
-Output: _site/index.html (the same page as the local app) and _site/data.json
+Output: every file in web/ (the same pages as the local app) and _site/data.json
 (latest fetch + default settings from config.yaml). Costs ~3 API credits.
 """
 import json
@@ -20,7 +20,9 @@ def main() -> None:
     snap = fetch_snapshot(client, cfg)
 
     SITE_DIR.mkdir(exist_ok=True)
-    shutil.copy(ROOT / "web" / "index.html", SITE_DIR / "index.html")
+    for f in (ROOT / "web").iterdir():   # pages, styles, scripts
+        if f.is_file():
+            shutil.copy(f, SITE_DIR / f.name)
     payload = {
         "settings": {k: scfg[k] for k in ("min_volume_btc", "long_range", "short_range")},
         "data": snapshot_to_dict(snap, scfg),

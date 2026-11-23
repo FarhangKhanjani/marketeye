@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in · Marketeye</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+.login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.login { width: 100%; max-width: 360px; display: grid; gap: 18px; }
+.login form { display: grid; gap: 12px; }
+.login input[type=text], .login input[type=password] { width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); font-size: 15px; }
+.login .btn { width: 100%; padding: 10px; }
+.center { text-align: center; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login">
+    <a href="index.html" class="brand" style="justify-content:center;color:inherit;text-decoration:none"><i></i>Marketeye</a>
+    <div class="panel">
+      <div><h2>Log in</h2><div class="sub" id="why">Log in to save searches and see your history.</div></div>
+      <form id="form" novalidate>
+        <label for="user">Username<input type="text" id="user" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+        <label for="pass">Password<input type="password" id="pass" autocomplete="current-password" required></label>
+        <button class="btn primary" type="submit" id="go">Log in</button>
+        <div class="msg" id="msg" role="alert"></div>
+      </form>
+    </div>
+    <div class="center"><a class="lnk" href="index.html">Back to the screener</a> · no account needed to use it</div>
+  </div>
+</div>
+<script type="module">
+import * as A from "./auth.js";
+const $ = id => document.getElementById(id);
+const next = A.safeNext(new URLSearchParams(location.search).get("next"));
+if (sessionStorage.getItem("marketeye.pendingSave")) $("why").textContent = "Log in and your search will be saved right away.";
+
+if (!A.configured) {
+  $("msg").textContent = "Login isn't set up on this site yet."; $("msg").className = "msg err"; $("go").disabled = true;
+} else {
+  let first = true;
+  A.onUser(u => { if (u && first) location.replace(next); first = false; });   // already logged in
+  $("form").onsubmit = async e => {
+    e.preventDefault();
+    if (!$("user").value.trim() || !$("pass").value) { $("msg").textContent = "Enter your username and password."; $("msg").className = "msg err"; return; }
+    $("go").disabled = true; $("msg").textContent = ""; $("go").textContent = "Logging in…";
+    try { await A.login($("user").value, $("pass").value); location.replace(next); }
+    catch (x) { $("msg").textContent = A.friendlyError(x); $("msg").className = "msg err"; $("go").disabled = false; $("go").textContent = "Log in"; }
+  };
+  $("user").focus();
+}
+</script>
+</body>
+</html>

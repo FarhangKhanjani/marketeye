@@ -58,6 +58,12 @@ def index():
     return send_from_directory(ROOT / "web", "index.html")
 
 
+@app.get("/<path:name>")
+def web_file(name: str):
+    """Other pages and assets (login.html, history.html, style.css, *.js)."""
+    return send_from_directory(ROOT / "web", name)
+
+
 @app.get("/api/state")
 def get_state():
     return jsonify(state())
